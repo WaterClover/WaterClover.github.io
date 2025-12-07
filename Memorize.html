@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>18岁生日纪念</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        #bg-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(135, 107, 132, 0.4);
+        }
+        
+        /* 控制面板 */
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(135, 107, 132, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+            background: rgba(135, 107, 132, 0.95);
+        }
+        
+        .control-btn.active {
+            background: rgba(242, 167, 178, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .tooltip {
+            position: absolute;
+            left: 60px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .control-btn:hover .tooltip {
+            opacity: 1;
+        }
+        
+        /* 许愿墙容器 - 可以完全隐藏 */
+        .wish-wall-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            z-index: 999;
+            transition: all 0.3s ease;
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .wish-wall-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+        
+        .wish-wall {
+            width: 100%;
+            background: rgba(135, 107, 132, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .wish-wall-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .wish-wall h2 {
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+            color: #fff;
+            margin: 0;
+            background: linear-gradient(135deg, #fff, #f2a7b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .wish-wall-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        .wish-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .user-label {
+            font-size: 14px;
+            white-space: nowrap;
+            opacity: 0.9;
+        }
+        
+        .user-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .user-input:focus {
+            box-shadow: 0 0 0 2px rgba(242, 167, 178, 0.5);
+        }
+        
+        .wish-input-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .wish-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .wish-input:focus {
+            box-shadow: 0 0 0 2px rgba(242, 167, 178, 0.5);
+        }
+        
+        .wish-submit {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #f2a7b2, #876b84);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .wish-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(242, 167, 178, 0.4);
+        }
+        
+        .wishes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .wish-item {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 14px;
+            animation: fadeIn 0.5s ease;
+            border-left: 5px solid #f2a7b2;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .wish-user {
+            font-weight: bold;
+            color: #876b84;
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+        
+        .wish-text {
+            margin-bottom: 8px;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+        
+        .wish-date {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+    /* 主内容区域 */
+    .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    gap: 30px;
+}
+
+.main-text {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    width: 100%;
+    padding: 30px;
+    background: rgba(135, 107, 132, 0.15); /* 降低透明度 */
+    backdrop-filter: blur(2px); /* 减弱模糊效果 */
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08); /* 减弱边框效果 */
+    max-width: 900px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); /* 减弱阴影效果 */
+}
+
+.quote {
+    font-size: 2.8rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+    line-height: 1.4;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp1 2s ease-out forwards;
+    animation-delay: 2s;
+}
+
+.english-quote {
+    font-size: 2rem;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp1 2s ease-out forwards;
+    animation-delay: 2.5s;
+}
+
+.date {
+    font-size: 1.8rem;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp1 2s ease-out forwards;
+    animation-delay: 3s;
+}
+
+        
+        /* 动画 */
+        @keyframes fadeInUp1 {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 樱花花瓣简化版 */
+        .sakura-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        .petal {
+            position: absolute;
+            background: linear-gradient(135deg, #ffc6d9, #ffb6c1);
+            border-radius: 50% 0 50% 50%;
+            transform: rotate(45deg);
+            opacity: 0.8;
+            top: -20px;
+            filter: blur(0.5px);
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .control-panel {
+                top: 15px;
+                left: 15px;
+            }
+            
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+            
+            .wish-wall-container {
+                width: 95%;
+                max-height: 85vh;
+            }
+            
+            .wish-wall {
+                padding: 20px;
+                max-height: 75vh;
+            }
+            
+            .wish-wall h2 {
+                font-size: 1.8rem;
+            }
+            
+            .quote {
+                font-size: 2rem;
+            }
+            
+            .english-quote {
+                font-size: 1.4rem;
+            }
+            
+            .date {
+                font-size: 1.3rem;
+            }
+            
+            .wish-input-row {
+                flex-direction: column;
+            }
+            
+            .wish-input {
+                font-size: 14px;
+                padding: 12px 15px;
+            }
+            
+            .wish-submit {
+                padding: 12px;
+                width: 100%;
+            }
+            
+            .user-input-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .user-input {
+                width: 100%;
+            }
+            
+            .main-text {
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .control-panel {
+                top: 10px;
+                left: 10px;
+            }
+            
+            .control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            
+            .quote {
+                font-size: 1.6rem;
+            }
+            
+            .english-quote {
+                font-size: 1.1rem;
+            }
+            
+            .date {
+                font-size: 1rem;
+            }
+            
+            .wish-item {
+                font-size: 13px;
+                padding: 12px;
+            }
+            
+            .wish-user {
+                font-size: 14px;
+            }
+        }
+            @media (max-width: 768px) {
+    .main-text {
+        padding: 20px;
+        background: rgba(135, 107, 132, 0.12); /* 移动端进一步减弱 */
+        backdrop-filter: blur(1px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .quote {
+        font-size: 2rem;
+    }
+    
+    .english-quote {
+        font-size: 1.4rem;
+    }
+    
+    .date {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-text {
+        padding: 15px;
+        background: rgba(135, 107, 132, 0.1); /* 小屏幕更减弱 */
+        backdrop-filter: blur(0.5px);
+    }
+    
+    .quote {
+        font-size: 1.6rem;
+    }
+    
+    .english-quote {
+        font-size: 1.1rem;
+    }
+    
+    .date {
+        font-size: 1rem;
+    }
+}
+        
+        /* 声音控制按钮 */
+        .audio-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .audio-control:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+        }
+        
+        /* 滚动条美化 */
+        .wish-wall-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .wish-wall-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        .wish-wall-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        .wish-wall-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 愿望统计 */
+        .wish-count {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* 管理员控制面板 */
+        .admin-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        
+        .admin-panel:hover {
+            opacity: 1;
+        }
+        
+        .admin-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(86, 156, 214, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .admin-btn:hover {
+            transform: scale(1.1);
+            background: rgba(86, 156, 214, 0.95);
+        }
+        
+        .admin-panel.hidden {
+            display: none;
+        }
+        
+        /* 管理员确认对话框 */
+        .admin-confirm {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .admin-confirm.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .admin-confirm-content {
+            background: rgba(135, 107, 132, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        
+        .admin-confirm h3 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .admin-confirm p {
+            margin-bottom: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .confirm-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .confirm-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .confirm-btn.confirm {
+            background: linear-gradient(135deg, #f2a7b2, #876b84);
+            color: white;
+        }
+        
+        .confirm-btn.cancel {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .confirm-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Toast提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(135, 107, 132, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            z-index: 2001;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            max-width: 90%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-background">
+        <video id="bg-video" autoplay loop muted playsinline>
+            <source src="亚津子1.mp4" type="video/mp4" preload="auto">
+            您的浏览器不支持HTML5视频播放功能。
+        </video>
+        <div class="overlay"></div>
+    </div>
+    
+    <!-- 控制面板 -->
+    <div class="control-panel">
+        <button class="control-btn" id="toggleWishWallBtn">
+            <span>📝</span>
+            <div class="tooltip">许愿墙</div>
+        </button>
+        <button class="control-btn" id="toggleSakuraBtn">
+            <span>🌸</span>
+            <div class="tooltip">樱花效果</div>
+        </button>
+    </div>
+    
+    <!-- 管理员控制面板（默认隐藏） -->
+    <div class="admin-panel hidden" id="adminPanel">
+        <button class="admin-btn" id="clearWishesBtn" title="清空愿望">
+            <span>🗑️</span>
+        </button>
+        <button class="admin-btn" id="exportWishesBtn" title="导出愿望">
+            <span>📥</span>
+        </button>
+    </div>
+    
+    <!-- 管理员确认对话框 -->
+    <div class="admin-confirm" id="adminConfirm">
+        <div class="admin-confirm-content">
+            <h3>确认操作</h3>
+            <p id="confirmMessage">您确定要执行此操作吗？此操作不可撤销。</p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn cancel" id="cancelConfirm">取消</button>
+                <button class="confirm-btn confirm" id="executeConfirm">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 许愿墙容器 -->
+    <div class="wish-wall-container hidden" id="wishWallContainer">
+        <div class="wish-wall">
+            <div class="wish-wall-header">
+                <h2>许愿墙</h2>
+                <div class="wish-count">
+                    <span id="wishCount">0</span> 个愿望
+                </div>
+            </div>
+            <div class="wish-wall-content">
+                <div class="wish-form">
+                    <div class="user-input-row">
+                        <span class="user-label">名字：</span>
+                        <input type="text" class="user-input" id="userName" placeholder="您的名字（可选）" maxlength="20">
+                    </div>
+                    <div class="wish-input-row">
+                        <input type="text" class="wish-input" id="wishInput" placeholder="写下您的祝福...">
+                        <button class="wish-submit" id="submitWish">许愿</button>
+                    </div>
+                </div>
+                <div class="wishes-list" id="wishesList">
+                    <!-- 愿望列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主内容区域 -->
+    <div class="content">
+        <div class="main-text">
+            <div class="quote">花予及冠，志予鸿鹄</div>
+            <div class="english-quote">Dedicated to 18, Dedicated to myself</div>
+            <div class="date">2025.12.11</div>
+        </div>
+    </div>
+    
+    <!-- 樱花容器 -->
+    <div class="sakura-container" id="sakuraContainer">
+        <!-- 樱花花瓣将通过JavaScript动态生成 -->
+    </div>
+    
+    <!-- 声音控制按钮 -->
+    <button class="audio-control" id="audioToggle">🔇</button>
+    
+    <!-- Toast提示容器 -->
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // 声音控制功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('bg-video');
+            const audioToggle = document.getElementById('audioToggle');
+            
+            // 初始状态：静音
+            video.muted = true;
+            audioToggle.textContent = '🔇';
+            
+            // 点击按钮切换声音
+            audioToggle.addEventListener('click', function() {
+                video.muted = !video.muted;
+                audioToggle.textContent = video.muted ? '🔇' : '🔊';
+                
+                // 如果取消静音，尝试播放
+                if (!video.muted) {
+                    video.play().catch(error => {
+                        console.log('播放失败:', error);
+                    });
+                }
+            });
+        });
+        
+        // 简化版樱花花瓣生成
+        function createSakura() {
+            const container = document.getElementById('sakuraContainer');
+            const petalCount = 50;
+            
+            for (let i = 0; i < petalCount; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                
+                // 随机大小
+                const size = Math.random() * 12 + 8;
+                petal.style.width = `${size}px`;
+                petal.style.height = `${size}px`;
+                
+                // 随机起始位置
+                petal.style.left = `${Math.random() * 100}%`;
+                
+                // 随机动画参数
+                const duration = Math.random() * 15 + 10;
+                const delay = Math.random() * 5;
+                const swayAmount = Math.random() * 100 + 50;
+                
+                // 设置动画
+                petal.style.animation = `
+                    fall ${duration}s linear ${delay}s infinite,
+                    sway ${duration * 0.7}s ease-in-out ${delay}s infinite
+                `;
+                
+                // 定义花瓣动画
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fall {
+                        0% {
+                            top: -20px;
+                            transform: rotate(45deg);
+                        }
+                        100% {
+                            top: 100vh;
+                            transform: rotate(225deg);
+                        }
+                    }
+                    
+                    @keyframes sway {
+                        0%, 100% {
+                            transform: translateX(0) rotate(45deg);
+                        }
+                        50% {
+                            transform: translateX(${swayAmount}px) rotate(45deg);
+                        }
+                    }
+                `;
+                
+                document.head.appendChild(style);
+                container.appendChild(petal);
+            }
+        }
+        
+        // 许愿墙功能
+        class WishWall {
+            constructor() {
+                // 控制元素
+                this.toggleWishWallBtn = document.getElementById('toggleWishWallBtn');
+                this.toggleSakuraBtn = document.getElementById('toggleSakuraBtn');
+                this.wishWallContainer = document.getElementById('wishWallContainer');
+                
+                // 许愿墙元素
+                this.wishInput = document.getElementById('wishInput');
+                this.userNameInput = document.getElementById('userName');
+                this.submitWish = document.getElementById('submitWish');
+                this.wishesList = document.getElementById('wishesList');
+                this.wishCount = document.getElementById('wishCount');
+                
+                // 管理员元素
+                this.adminPanel = document.getElementById('adminPanel');
+                this.clearWishesBtn = document.getElementById('clearWishesBtn');
+                this.exportWishesBtn = document.getElementById('exportWishesBtn');
+                this.adminConfirm = document.getElementById('adminConfirm');
+                this.confirmMessage = document.getElementById('confirmMessage');
+                this.cancelConfirm = document.getElementById('cancelConfirm');
+                this.executeConfirm = document.getElementById('executeConfirm');
+                
+                // 樱花容器
+                this.sakuraContainer = document.getElementById('sakuraContainer');
+                
+                // Toast元素
+                this.toast = document.getElementById('toast');
+                
+                // 从localStorage加载状态
+                this.wishes = JSON.parse(localStorage.getItem('wishes')) || [];
+                this.currentUserName = localStorage.getItem('currentUserName') || '匿名';
+                this.isSakuraEnabled = localStorage.getItem('isSakuraEnabled') !== 'false'; // 默认启用
+                this.isAdminMode = localStorage.getItem('isAdminMode') === 'true';
+                
+                // 管理员密码（可以修改）
+                this.adminPassword = "admin123"; // 简单密码，实际应用应该更复杂
+                
+                this.init();
+            }
+            
+            init() {
+                // 设置初始状态
+                this.updateWishCount();
+                this.renderWishes();
+                this.userNameInput.value = this.currentUserName;
+                
+                // 设置樱花状态
+                if (!this.isSakuraEnabled) {
+                    this.sakuraContainer.style.display = 'none';
+                    this.toggleSakuraBtn.classList.remove('active');
+                } else {
+                    this.toggleSakuraBtn.classList.add('active');
+                }
+                
+                // 设置管理员面板
+                if (this.isAdminMode) {
+                    this.adminPanel.classList.remove('hidden');
+                }
+                
+                // 事件监听
+                this.toggleWishWallBtn.addEventListener('click', () => this.toggleWishWall());
+                this.toggleSakuraBtn.addEventListener('click', () => this.toggleSakura());
+                
+                this.submitWish.addEventListener('click', () => this.addWish());
+                this.wishInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addWish();
+                });
+                
+                // 管理员事件
+                this.clearWishesBtn.addEventListener('click', () => this.showClearConfirm());
+                this.exportWishesBtn.addEventListener('click', () => this.exportWishes());
+                
+                // 确认对话框事件
+                this.cancelConfirm.addEventListener('click', () => this.hideConfirm());
+                this.executeConfirm.addEventListener('click', () => this.executeConfirmedAction());
+                
+                // 双击标题可以激活管理员模式
+                document.querySelector('.main-text').addEventListener('dblclick', () => this.activateAdminMode());
+                
+                // 创建樱花
+                if (this.isSakuraEnabled) {
+                    createSakura();
+                }
+                
+                // 检查URL参数中的管理员模式
+                this.checkURLParams();
+            }
+            
+            toggleWishWall() {
+                const isHidden = this.wishWallContainer.classList.toggle('hidden');
+                this.toggleWishWallBtn.classList.toggle('active', !isHidden);
+                
+                // 显示提示
+                this.showToast(isHidden ? '许愿墙已隐藏' : '许愿墙已显示');
+                
+                // 如果显示许愿墙，聚焦到输入框
+                if (!isHidden) {
+                    setTimeout(() => {
+                        this.wishInput.focus();
+                    }, 300);
+                }
+            }
+            
+            toggleSakura() {
+                this.isSakuraEnabled = !this.isSakuraEnabled;
+                this.toggleSakuraBtn.classList.toggle('active', this.isSakuraEnabled);
+                localStorage.setItem('isSakuraEnabled', this.isSakuraEnabled);
+                
+                if (this.isSakuraEnabled) {
+                    this.sakuraContainer.style.display = 'block';
+                    createSakura();
+                    this.showToast('樱花效果已开启');
+                } else {
+                    this.sakuraContainer.style.display = 'none';
+                    this.showToast('樱花效果已关闭');
+                }
+            }
+            
+            addWish() {
+                const text = this.wishInput.value.trim();
+                if (!text) {
+                    this.showToast('请输入祝福内容');
+                    return;
+                }
+                
+                // 使用输入框中的用户名，如果为空则使用当前用户名
+                const userName = this.userNameInput.value.trim() || this.currentUserName;
+                
+                const wish = {
+                    id: Date.now(),
+                    user: userName,
+                    text: text,
+                    date: new Date().toLocaleString('zh-CN')
+                };
+                
+                this.wishes.unshift(wish);
+                this.saveWishes();
+                this.renderWishes();
+                this.updateWishCount();
+                this.wishInput.value = '';
+                
+                // 添加动画效果
+                this.submitWish.textContent = '已许愿 ✓';
+                setTimeout(() => {
+                    this.submitWish.textContent = '许愿';
+                }, 1000);
+                
+                // 滚动到底部
+                setTimeout(() => {
+                    const content = this.wishWallContainer.querySelector('.wish-wall-content');
+                    content.scrollTop = 0; // 因为新愿望在顶部，所以滚动到顶部
+                }, 100);
+                
+                // 显示成功提示
+                this.showToast('愿望已添加！');
+            }
+            
+            renderWishes() {
+                this.wishesList.innerHTML = '';
+                
+                if (this.wishes.length === 0) {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'wish-item';
+                    emptyMessage.innerHTML = `
+                        <div class="wish-user">许愿墙</div>
+                        <div class="wish-text">还没有人许愿，快来写下第一个祝福吧！</div>
+                    `;
+                    this.wishesList.appendChild(emptyMessage);
+                    return;
+                }
+                
+                this.wishes.forEach(wish => {
+                    const wishItem = document.createElement('div');
+                    wishItem.className = 'wish-item';
+                    wishItem.innerHTML = `
+                        <div class="wish-user">${wish.user}</div>
+                        <div class="wish-text">${wish.text}</div>
+                        <div class="wish-date">${wish.date}</div>
+                    `;
+                    this.wishesList.appendChild(wishItem);
+                });
+            }
+            
+            updateWishCount() {
+                this.wishCount.textContent = this.wishes.length;
+            }
+            
+            showClearConfirm() {
+                this.confirmMessage.textContent = '确定要清空所有愿望吗？此操作不可撤销。';
+                this.adminConfirm.classList.add('active');
+                this.currentConfirmAction = 'clear';
+            }
+            
+            clearAllWishes() {
+                this.wishes = [];
+                this.saveWishes();
+                this.renderWishes();
+                this.updateWishCount();
+                this.showToast('所有愿望已清空');
+            }
+            
+            exportWishes() {
+                const dataStr = JSON.stringify(this.wishes, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                // 创建下载链接
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(dataBlob);
+                downloadLink.download = `wishes_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                this.showToast('愿望已导出为JSON文件');
+            }
+            
+            showConfirm(message, action) {
+                this.confirmMessage.textContent = message;
+                this.adminConfirm.classList.add('active');
+                this.currentConfirmAction = action;
+            }
+            
+            hideConfirm() {
+                this.adminConfirm.classList.remove('active');
+            }
+            
+            executeConfirmedAction() {
+                this.hideConfirm();
+                
+                if (this.currentConfirmAction === 'clear') {
+                    this.clearAllWishes();
+                }
+            }
+            
+            saveWishes() {
+                localStorage.setItem('wishes', JSON.stringify(this.wishes));
+            }
+            
+            activateAdminMode() {
+                const password = prompt('请输入管理员密码：');
+                if (password === this.adminPassword) {
+                    this.isAdminMode = true;
+                    this.adminPanel.classList.remove('hidden');
+                    localStorage.setItem('isAdminMode', 'true');
+                    this.showToast('管理员模式已激活');
+                } else if (password !== null) {
+                    alert('密码错误！');
+                }
+            }
+            
+            checkURLParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const adminParam = urlParams.get('admin');
+                
+                if (adminParam === '1') {
+                    this.activateAdminMode();
+                }
+            }
+            
+            showToast(message) {
+                this.toast.textContent = message;
+                this.toast.style.opacity = '1';
+                this.toast.style.transform = 'translateX(-50%) translateY(0)';
+                
+                // 3秒后隐藏toast
+                setTimeout(() => {
+                    this.toast.style.opacity = '0';
+                    this.toast.style.transform = 'translateX(-50%) translateY(-20px)';
+                }, 3000);
+            }
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            new WishWall();
+        });
+        
+        // 响应式调整花瓣数量
+        function adjustPetalCount() {
+            const container = document.getElementById('sakuraContainer');
+            if (window.innerWidth < 768) {
+                container.innerHTML = '';
+                createSakura();
+            }
+        }
+        
+        window.addEventListener('resize', adjustPetalCount);
+    </script>
+</body>
+</html>
