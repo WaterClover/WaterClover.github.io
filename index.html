@@ -20,7 +20,8 @@
             flex-direction: column;
         }
         
-        .video-background {
+        /* 修改：将视频背景改为图片背景 */
+        .background {
             position: fixed;
             top: 0;
             left: 0;
@@ -30,7 +31,7 @@
             overflow: hidden;
         }
         
-        #bg-video {
+        #bg-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -719,13 +720,18 @@
     </style>
 </head>
 <body>
-    <div class="video-background">
-        <video id="bg-video" autoplay loop muted playsinline>
-            <source src="assets/video1.mp4" type="video/mp4" preload="auto">
-            您的浏览器不支持HTML5视频播放功能。
-        </video>
+    <!-- 修改：将视频背景改为图片背景 -->
+    <div class="background">
+        <img id="bg-image" src="assets/image.png" alt="背景图片">
         <div class="overlay"></div>
     </div>
+    
+    <!-- 音频元素（隐藏） -->
+    <audio id="bg-music" loop>
+        <source src="assets/audio.mp3" type="audio/mp3">
+        <source src="./audio/background-music.ogg" type="audio/ogg">
+        您的浏览器不支持音频播放功能。
+    </audio>
     
     <!-- 控制面板 -->
     <div class="control-panel">
@@ -809,27 +815,59 @@
     <div class="toast" id="toast"></div>
     
     <script>
-        // 声音控制功能
+        // 声音控制功能 - 修改：改为控制音频元素
         document.addEventListener('DOMContentLoaded', function() {
-            const video = document.getElementById('bg-video');
+            const audio = document.getElementById('bg-music');
             const audioToggle = document.getElementById('audioToggle');
             
             // 初始状态：静音
-            video.muted = true;
+            audio.muted = true;
             audioToggle.textContent = '🔇';
+            
+            // 尝试自动播放音频（需要用户交互）
+            function attemptPlayAudio() {
+                audio.play().then(() => {
+                    console.log('音频播放成功');
+                }).catch(error => {
+                    console.log('自动播放被阻止:', error);
+                    // 显示提示，需要用户点击才能播放
+                    if (error.name === 'NotAllowedError') {
+                        showToast('点击右下角音乐按钮开启背景音乐');
+                    }
+                });
+            }
+            
+            // 页面加载后尝试播放
+            attemptPlayAudio();
             
             // 点击按钮切换声音
             audioToggle.addEventListener('click', function() {
-                video.muted = !video.muted;
-                audioToggle.textContent = video.muted ? '🔇' : '🔊';
+                audio.muted = !audio.muted;
+                audioToggle.textContent = audio.muted ? '🔇' : '🔊';
                 
                 // 如果取消静音，尝试播放
-                if (!video.muted) {
-                    video.play().catch(error => {
+                if (!audio.muted) {
+                    audio.play().catch(error => {
                         console.log('播放失败:', error);
                     });
                 }
+                
+                // 显示提示
+                showToast(audio.muted ? '背景音乐已关闭' : '背景音乐已开启');
             });
+            
+            // 辅助函数
+            function showToast(message) {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+                
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(-50%) translateY(-20px)';
+                }, 3000);
+            }
         });
         
         // 简化版樱花花瓣生成
@@ -1181,6 +1219,3 @@
     </script>
 </body>
 </html>
-
-
-
