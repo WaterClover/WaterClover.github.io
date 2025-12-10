@@ -4,7 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>18岁生日纪念</title>
+    
+    <!-- 添加性能优化meta标签 -->
+    <meta name="theme-color" content="#876b84">
+    <meta name="description" content="18岁生日纪念页面">
+    
+    <!-- 预加载关键资源 -->
+    <link rel="preload" href="./assets/image.png" as="image">
+    
     <style>
+        /* 添加加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #876b84, #f2a7b2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -35,6 +71,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: opacity 0.5s ease;
         }
         
         .overlay {
@@ -720,16 +757,22 @@
     </style>
 </head>
 <body>
-    <!-- 修改：将视频背景改为图片背景 -->
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 背景图片 -->
     <div class="background">
-        <img id="bg-image" src="assets/image.png" alt="背景图片">
+        <img id="bg-image" 
+            src="assets/image.png"
+            alt="背景图片">
         <div class="overlay"></div>
     </div>
     
-    <!-- 音频元素（隐藏） -->
-    <audio id="bg-music" loop>
+    <!-- 音频元素 -->
+    <audio id="bg-music" loop preload="metadata">
         <source src="assets/audio.mp3" type="audio/mp3">
-        <source src="./audio/background-music.ogg" type="audio/ogg">
         您的浏览器不支持音频播放功能。
     </audio>
     
@@ -815,8 +858,9 @@
     <div class="toast" id="toast"></div>
     
     <script>
-        // 声音控制功能 - 修改：改为控制音频元素
+        // 主初始化函数
         document.addEventListener('DOMContentLoaded', function() {
+            // 1. 初始化音频控制
             const audio = document.getElementById('bg-music');
             const audioToggle = document.getElementById('audioToggle');
             
@@ -824,56 +868,100 @@
             audio.muted = true;
             audioToggle.textContent = '🔇';
             
-            // 尝试自动播放音频（需要用户交互）
-            function attemptPlayAudio() {
-                audio.play().then(() => {
-                    console.log('音频播放成功');
-                }).catch(error => {
-                    console.log('自动播放被阻止:', error);
-                    // 显示提示，需要用户点击才能播放
-                    if (error.name === 'NotAllowedError') {
-                        showToast('点击右下角音乐按钮开启背景音乐');
-                    }
-                });
+            // 从localStorage读取音频状态
+            const audioEnabled = localStorage.getItem('audioEnabled') === 'true';
+            if (audioEnabled) {
+                audio.muted = false;
+                audioToggle.textContent = '🔊';
             }
             
-            // 页面加载后尝试播放
-            attemptPlayAudio();
-            
-            // 点击按钮切换声音
-            audioToggle.addEventListener('click', function() {
+            // 音频控制函数
+            function toggleAudio() {
                 audio.muted = !audio.muted;
                 audioToggle.textContent = audio.muted ? '🔇' : '🔊';
+                localStorage.setItem('audioEnabled', audio.muted ? 'false' : 'true');
                 
                 // 如果取消静音，尝试播放
                 if (!audio.muted) {
                     audio.play().catch(error => {
-                        console.log('播放失败:', error);
+                        console.log('音频播放失败:', error);
                     });
                 }
                 
                 // 显示提示
                 showToast(audio.muted ? '背景音乐已关闭' : '背景音乐已开启');
+            }
+            
+            // 点击按钮切换声音
+            audioToggle.addEventListener('click', toggleAudio);
+            
+            // 2. 页面加载完成后的处理
+            window.addEventListener('load', function() {
+                // 隐藏加载动画
+                setTimeout(() => {
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.style.opacity = '0';
+                        setTimeout(() => {
+                            loadingOverlay.style.display = 'none';
+                        }, 500);
+                    }
+                }, 500);
+                
+                // 记录加载时间
+                if (performance.timing) {
+                    const timing = performance.timing;
+                    const loadTime = timing.loadEventEnd - timing.navigationStart;
+                    console.log('页面加载耗时:', loadTime + 'ms');
+                }
             });
             
-            // 辅助函数
-            function showToast(message) {
-                const toast = document.getElementById('toast');
-                toast.textContent = message;
-                toast.style.opacity = '1';
-                toast.style.transform = 'translateX(-50%) translateY(0)';
-                
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    toast.style.transform = 'translateX(-50%) translateY(-20px)';
-                }, 3000);
-            }
+            // 3. 初始化许愿墙
+            setTimeout(() => {
+                new WishWall();
+            }, 100);
         });
+        
+        // Toast提示函数
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            
+            toast.textContent = message;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-20px)';
+            }, 3000);
+        }
         
         // 简化版樱花花瓣生成
         function createSakura() {
             const container = document.getElementById('sakuraContainer');
+            if (!container) return;
+            
             const petalCount = 50;
+            
+            // 清理现有花瓣
+            container.innerHTML = '';
+            
+            // 创建动画样式
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fall {
+                    0% {
+                        top: -20px;
+                        transform: rotate(45deg);
+                    }
+                    100% {
+                        top: 100vh;
+                        transform: rotate(225deg);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
             
             for (let i = 0; i < petalCount; i++) {
                 const petal = document.createElement('div');
@@ -894,25 +982,13 @@
                 
                 // 设置动画
                 petal.style.animation = `
-                    fall ${duration}s linear ${delay}s infinite,
-                    sway ${duration * 0.7}s ease-in-out ${delay}s infinite
+                    fall ${duration}s linear ${delay}s infinite
                 `;
                 
-                // 定义花瓣动画
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes fall {
-                        0% {
-                            top: -20px;
-                            transform: rotate(45deg);
-                        }
-                        100% {
-                            top: 100vh;
-                            transform: rotate(225deg);
-                        }
-                    }
-                    
-                    @keyframes sway {
+                // 添加摆动效果
+                petal.style.transformOrigin = 'center';
+                const swayAnimation = `
+                    @keyframes sway-${i} {
                         0%, 100% {
                             transform: translateX(0) rotate(45deg);
                         }
@@ -920,10 +996,34 @@
                             transform: translateX(${swayAmount}px) rotate(45deg);
                         }
                     }
+                    .petal:nth-child(${i + 1}) {
+                        animation: fall ${duration}s linear ${delay}s infinite, sway-${i} ${duration * 0.7}s ease-in-out ${delay}s infinite;
+                    }
                 `;
                 
-                document.head.appendChild(style);
+                const swayStyle = document.createElement('style');
+                swayStyle.textContent = swayAnimation;
+                document.head.appendChild(swayStyle);
+                
                 container.appendChild(petal);
+            }
+        }
+        
+        // 响应式调整花瓣数量
+        function adjustPetalCount() {
+            const container = document.getElementById('sakuraContainer');
+            if (container && window.innerWidth < 768) {
+                // 移动端减少花瓣数量
+                const petals = container.querySelectorAll('.petal');
+                const targetCount = Math.min(30, Math.floor(petals.length * 0.6));
+                
+                if (petals.length > targetCount) {
+                    for (let i = targetCount; i < petals.length; i++) {
+                        if (petals[i]) {
+                            container.removeChild(petals[i]);
+                        }
+                    }
+                }
             }
         }
         
@@ -981,6 +1081,7 @@
                     this.toggleSakuraBtn.classList.remove('active');
                 } else {
                     this.toggleSakuraBtn.classList.add('active');
+                    createSakura();
                 }
                 
                 // 设置管理员面板
@@ -1008,13 +1109,11 @@
                 // 双击标题可以激活管理员模式
                 document.querySelector('.main-text').addEventListener('dblclick', () => this.activateAdminMode());
                 
-                // 创建樱花
-                if (this.isSakuraEnabled) {
-                    createSakura();
-                }
-                
                 // 检查URL参数中的管理员模式
                 this.checkURLParams();
+                
+                // 监听窗口大小变化
+                window.addEventListener('resize', adjustPetalCount);
             }
             
             toggleWishWall() {
@@ -1076,10 +1175,18 @@
                     this.submitWish.textContent = '许愿';
                 }, 1000);
                 
-                // 滚动到底部
+                // 保存用户名
+                if (userName !== this.currentUserName) {
+                    this.currentUserName = userName;
+                    localStorage.setItem('currentUserName', userName);
+                }
+                
+                // 滚动到顶部
                 setTimeout(() => {
                     const content = this.wishWallContainer.querySelector('.wish-wall-content');
-                    content.scrollTop = 0; // 因为新愿望在顶部，所以滚动到顶部
+                    if (content) {
+                        content.scrollTop = 0;
+                    }
                 }, 100);
                 
                 // 显示成功提示
@@ -1087,6 +1194,8 @@
             }
             
             renderWishes() {
+                if (!this.wishesList) return;
+                
                 this.wishesList.innerHTML = '';
                 
                 if (this.wishes.length === 0) {
@@ -1104,16 +1213,24 @@
                     const wishItem = document.createElement('div');
                     wishItem.className = 'wish-item';
                     wishItem.innerHTML = `
-                        <div class="wish-user">${wish.user}</div>
-                        <div class="wish-text">${wish.text}</div>
+                        <div class="wish-user">${this.escapeHtml(wish.user)}</div>
+                        <div class="wish-text">${this.escapeHtml(wish.text)}</div>
                         <div class="wish-date">${wish.date}</div>
                     `;
                     this.wishesList.appendChild(wishItem);
                 });
             }
             
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
             updateWishCount() {
-                this.wishCount.textContent = this.wishes.length;
+                if (this.wishCount) {
+                    this.wishCount.textContent = this.wishes.length;
+                }
             }
             
             showClearConfirm() {
@@ -1189,32 +1306,11 @@
             }
             
             showToast(message) {
-                this.toast.textContent = message;
-                this.toast.style.opacity = '1';
-                this.toast.style.transform = 'translateX(-50%) translateY(0)';
-                
-                // 3秒后隐藏toast
-                setTimeout(() => {
-                    this.toast.style.opacity = '0';
-                    this.toast.style.transform = 'translateX(-50%) translateY(-20px)';
-                }, 3000);
+                showToast(message);
             }
         }
         
-        // 页面加载完成后初始化
-        window.addEventListener('load', () => {
-            new WishWall();
-        });
-        
-        // 响应式调整花瓣数量
-        function adjustPetalCount() {
-            const container = document.getElementById('sakuraContainer');
-            if (window.innerWidth < 768) {
-                container.innerHTML = '';
-                createSakura();
-            }
-        }
-        
+        // 初始化响应式调整
         window.addEventListener('resize', adjustPetalCount);
     </script>
 </body>
